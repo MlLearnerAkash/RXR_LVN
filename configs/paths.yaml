@@ -1,0 +1,19 @@
+data_root: /path/to/rxr_dataset
+output_dir: outputs
+checkpoint_dir: outputs/checkpoints
+visualization_dir: outputs/visualizations
+
+# RxR dataset paths
+rxr_guide_annotations:
+  train: ${data_root}/rxr_train_guide.jsonl
+  val_seen: ${data_root}/rxr_val_seen_guide.jsonl
+  val_unseen: ${data_root}/rxr_val_unseen_guide.jsonl
+  test_standard: ${data_root}/rxr_test_standard.jsonl
+
+rxr_follower_annotations:
+  train: ${data_root}/rxr_train_follower.jsonl
+  val_seen: ${data_root}/rxr_val_seen_follower.jsonl
+  val_unseen: ${data_root}/rxr_val_unseen_follower.jsonl
+
+pose_traces_dir: ${data_root}/pose_traces
+panorama_dir: ${data_root}/matterport_skybox_images

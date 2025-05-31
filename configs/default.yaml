@@ -1,0 +1,18 @@
+data:
+  root: /path/to/rxr_dataset
+  num_workers: 4
+  max_length: 80
+
+model:
+  embed_dim: 512
+  num_heads: 8
+  dropout: 0.1
+  use_pose_traces: true
+  use_ground_truth_path: true
+
+training:
+  batch_size: 8
+  num_epochs: 30
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  clip_model: ViT-B/32
