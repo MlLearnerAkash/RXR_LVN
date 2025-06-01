@@ -3,7 +3,7 @@ import yaml
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-
+import json
 class RxRDataset(Dataset):
     """
     Dataset class for loading and preprocessing RxR dataset for heatmap generation.
@@ -27,10 +27,9 @@ class RxRDataset(Dataset):
         
         # Load dataset annotations
         self.annotations = self._load_annotations()
-        
+
         # Load pose traces
         self.pose_traces = self._load_pose_traces()
-        
         print(f"Loaded {len(self.annotations)} samples from {split} split")
     
     def _load_annotations(self):
@@ -40,7 +39,7 @@ class RxRDataset(Dataset):
         Returns:
             list: List of annotation dictionaries
         """
-        annotation_file = os.path.join(self.data_root, f"rxr_{self.split}_guide.jsonl")
+        annotation_file = os.path.join(self.data_root, f"rxr_{self.split}_guide_unzipped.jsonl")
         
         if not os.path.exists(annotation_file):
             raise FileNotFoundError(f"Annotation file not found: {annotation_file}")
@@ -61,21 +60,23 @@ class RxRDataset(Dataset):
         """
         pose_traces = {}
         pose_trace_dir = os.path.join(self.data_root, "pose_traces")
-        
+
         if not os.path.exists(pose_trace_dir):
             print(f"Warning: Pose trace directory not found: {pose_trace_dir}")
             return pose_traces
         
         for annotation in self.annotations:
+            
             instruction_id = annotation['instruction_id']
             pose_trace_file = os.path.join(
                 pose_trace_dir, 
+                f"rxr_{self.split}",
                 f"{instruction_id:06}_guide_pose_trace.npz"
             )
             
             if os.path.exists(pose_trace_file):
                 pose_traces[instruction_id] = np.load(pose_trace_file)
-        
+                
         print(f"Loaded {len(pose_traces)} pose traces")
         return pose_traces
     
