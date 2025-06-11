@@ -4,6 +4,7 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import json
+from data.rxr_colat_fn import rxr_collate_fn
 class RxRDataset(Dataset):
     """
     Dataset class for loading and preprocessing RxR dataset for heatmap generation.
@@ -46,9 +47,12 @@ class RxRDataset(Dataset):
         
         annotations = []
         with open(annotation_file, 'r') as f:
+            i = 0
             for line in f:
+                i+=1
                 annotations.append(json.loads(line.strip()))
-        
+                if i ==300:
+                    break
         return annotations
     
     def _load_pose_traces(self):
@@ -66,7 +70,6 @@ class RxRDataset(Dataset):
             return pose_traces
         
         for annotation in self.annotations:
-            
             instruction_id = annotation['instruction_id']
             pose_trace_file = os.path.join(
                 pose_trace_dir, 
@@ -75,10 +78,14 @@ class RxRDataset(Dataset):
             )
             
             if os.path.exists(pose_trace_file):
-                pose_traces[instruction_id] = np.load(pose_trace_file)
-                
+                # Load the data and convert to dict to avoid keeping file handles open
+                with np.load(pose_trace_file, allow_pickle=True) as data:
+                    # Convert to a regular dictionary to avoid file handle issues
+                    pose_traces[instruction_id] = {key: data[key] for key in data.keys()}
+        
         print(f"Loaded {len(pose_traces)} pose traces")
         return pose_traces
+
     
     def _load_panorama(self, scan_id, viewpoint_id):
         """
@@ -92,14 +99,14 @@ class RxRDataset(Dataset):
             Image: Panorama image
         """
         panorama_path = os.path.join(
-            self.data_root, 
-            "matterport_skybox_images",
+            self.data_root,
             scan_id,
+            'matterport_skybox_images',
             f"{viewpoint_id}.jpg"
         )
-        
         if not os.path.exists(panorama_path):
             raise FileNotFoundError(f"Panorama image not found: {panorama_path}")
+            
         
         # Load and preprocess panorama
         from PIL import Image
@@ -142,7 +149,6 @@ class RxRDataset(Dataset):
         
         # Get pose trace if available
         pose_trace = self.pose_traces.get(instruction_id, None)
-        
         # Create sample dictionary
         sample = {
             'instruction_id': instruction_id,
@@ -172,14 +178,15 @@ def create_dataloader(data_root, split, batch_size=8, num_workers=4, transform=N
         DataLoader: PyTorch dataloader
     """
     dataset = RxRDataset(data_root, split, transform)
-    
+    print(dataset.__len__)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=(split == 'train'),
         num_workers=num_workers,
         pin_memory=True,
-        drop_last=(split == 'train')
+        drop_last=(split == 'train'),
+        collate_fn=rxr_collate_fn
     )
     
     return dataloader
